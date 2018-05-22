@@ -1,0 +1,11 @@
+image: registry.gitlab.com/eighthave/ci-image-git-buildpackage:cmd
+
+pages:
+  stage: deploy
+  script:
+    - mkdir public
+    - cp -a ../*.deb public/
+    - ls public > public/index.html
+  artifacts:
+    paths:
+      - public
