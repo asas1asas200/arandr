@@ -7,8 +7,12 @@ pages:
     - ls -la ..
     - apt-get -y install aptly
     - aptly repo create autobuilt || true
-    # introducing new distribution "autobuilt"; "experimental" might be just as good.
-    - aptly repo include --accept-unsigned --ignore-signatures --repo autobuilt ../*.changes
+    # could be a sourceful archive if we had the .orig.tar.gz always in the
+    # .changes -- withou that, we can't build a source archive anyway, and i'm
+    # not sure we should (the git history is the source here)
+    # # introducing new distribution "autobuilt"; "experimental" might be just as good.
+    # - aptly repo include --accept-unsigned --ignore-signatures --repo autobuilt ../*.changes
+    - aptly repo add autobuilt ../*.deb
     - aptly publish repo --skip-signing --distribution autobuilt autobuilt
     - rm -rf public
     - cp -a .aptly/public public
