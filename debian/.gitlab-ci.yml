@@ -3,9 +3,17 @@ image: registry.gitlab.com/eighthave/ci-image-git-buildpackage:latest
 pages:
   stage: deploy
   script:
-    - mkdir public
-    - cp -a ../*.deb public/
-    - ls public > public/index.html
+    - apt-get -y install aptly
+    - aptly repo create autobuilt || true
+    # introducing new distribution "autobuilt"; "experimental" might be just as good.
+    - aptly repo include --accept-unsigned --ignore-signatures --repo autobuilt ../*.changes
+    - aptly publish repo --skip-signing --distribution autobuilt autobuilt
+    - rm -rf public
+    - cp -a .aptly/public public
   artifacts:
     paths:
       - public
+  cache:
+    paths:
+      - .aptly.conf
+      - .aptly/
