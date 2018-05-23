@@ -1,4 +1,4 @@
-image: registry.gitlab.com/eighthave/ci-image-git-buildpackage:cmd
+image: registry.gitlab.com/eighthave/ci-image-git-buildpackage:latest
 
 pages:
   stage: deploy
