@@ -16,6 +16,8 @@ pages:
     - aptly publish repo --skip-signing --distribution autobuilt --architectures all,amd64 autobuilt || aptly publish update --skip-signing --architectures all,amd64 autobuilt
     - rm -rf public
     - cp -a ~/.aptly/public public
+    # ease debugging since directory indices are disabled
+    - cd public && find > index.html
   artifacts:
     paths:
       - public
