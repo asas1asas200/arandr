@@ -15,7 +15,7 @@ pages:
     - aptly repo add autobuilt ../*.deb
     - aptly publish repo --skip-signing --distribution autobuilt --architectures "any amd64" autobuilt || aptly publish update --skip-signing --architectures "any amd64" autobuilt
     - rm -rf public
-    - cp -a .aptly/public public
+    - cp -a ~/.aptly/public public
   artifacts:
     paths:
       - public
