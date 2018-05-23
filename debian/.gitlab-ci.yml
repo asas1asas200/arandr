@@ -13,7 +13,7 @@ pages:
     # # introducing new distribution "autobuilt"; "experimental" might be just as good.
     # - aptly repo include --accept-unsigned --ignore-signatures --repo autobuilt ../*.changes
     - aptly repo add autobuilt ../*.deb
-    - aptly publish repo --skip-signing --distribution autobuilt autobuilt
+    - aptly publish repo --skip-signing --distribution autobuilt --architectures "any amd64" autobuilt || aptly publish update --skip-signing --architectures "any amd64" autobuilt
     - rm -rf public
     - cp -a .aptly/public public
   artifacts:
