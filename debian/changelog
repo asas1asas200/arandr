@@ -1,3 +1,9 @@
+arandr (0.1.9-2+test1) UNRELEASED; urgency=medium
+
+  * Trying out the autobuild process.
+
+ -- Christian M. Amsüss <chrysn@fsfe.org>  Wed, 23 May 2018 17:02:22 +0200
+
 arandr (0.1.9-2) unstable; urgency=medium
 
   * Change debhelper compat to 10
