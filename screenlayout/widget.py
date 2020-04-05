@@ -168,6 +168,9 @@ class ARandRWidget(Gtk.DrawingArea):
     def set_resolution(self, output_name, res):
         self._set_something('mode', output_name, res)
 
+    def set_refresh_rate(self, output_name, rate):
+        self._set_something('rate', output_name, rate)
+
     def set_primary(self, output_name, primary):
         output = self._xrandr.configuration.outputs[output_name]
 
@@ -393,10 +396,28 @@ class ARandRWidget(Gtk.DrawingArea):
                 menu.add(primary)
 
             res_m = Gtk.Menu()
+            rate_m = None
             for mode in output_state.modes:
                 i = Gtk.CheckMenuItem(str(mode))
                 i.props.draw_as_radio = True
                 i.props.active = (output_config.mode.name == mode.name)
+
+                if i.props.active and output_config.mode.rates:
+                    rate_m = Gtk.Menu()
+                    for rate in output_config.mode.rates:
+                        j = Gtk.CheckMenuItem(str(rate))
+                        j.props.draw_as_radio = True
+                        j.props.active = (rate == output_config.rate)
+
+                        def _rate_set(_menuitem, output_name, rate):
+                            try:
+                                self.set_refresh_rate(output_name, rate)
+                            except InadequateConfiguration as exc:
+                                self.error_message(
+                                    _("Setting this refresh rate is not possible here: %s") % exc
+                                )
+                        j.connect('activate', _rate_set, output_name, rate)
+                        rate_m.add(j)
 
                 def _res_set(_menuitem, output_name, mode):
                     try:
@@ -428,10 +449,13 @@ class ARandRWidget(Gtk.DrawingArea):
 
             res_i = Gtk.MenuItem(_("Resolution"))
             res_i.props.submenu = res_m
+            rate_i = Gtk.MenuItem(_("Refresh Rate"))
+            rate_i.props.submenu = rate_m
             or_i = Gtk.MenuItem(_("Orientation"))
             or_i.props.submenu = or_m
 
             menu.add(res_i)
+            menu.add(rate_i)
             menu.add(or_i)
 
         menu.show_all()
