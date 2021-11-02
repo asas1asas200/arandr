@@ -69,12 +69,13 @@ class Size(tuple):
         return "%dx%d" % self
 
 
-class NamedSize:
-    """Object that behaves like a size, but has an additional name attribute"""
+class Mode:
+    """Object that behaves like a size, but has attributes for name and rates"""
 
-    def __init__(self, size, name):
+    def __init__(self, size, name, rates):
         self._size = size
         self.name = name
+        self.rates = rates
 
     width = property(lambda self: self[0])
     height = property(lambda self: self[1])

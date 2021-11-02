@@ -23,7 +23,7 @@ from functools import reduce
 
 from .auxiliary import (
     BetterList, Size, Position, Geometry, FileLoadError, FileSyntaxError,
-    InadequateConfiguration, Rotation, ROTATIONS, NORMAL, NamedSize,
+    InadequateConfiguration, Rotation, ROTATIONS, NORMAL, Mode,
 )
 from .i18n import _
 
@@ -144,6 +144,8 @@ class XRandR:
                         if part[1] not in ROTATIONS:
                             raise FileSyntaxError()
                         output.rotation = Rotation(part[1])
+                    elif part[0] == '--rate':
+                        output.rate = part[1]
                     else:
                         raise FileSyntaxError()
                 output.active = True
@@ -199,9 +201,11 @@ class XRandR:
                 if rotation in headline:
                     output.rotations.add(rotation)
 
-            currentname = None
-            for detail, w, h in details:
+            current_mode = None
+            current_rate = None
+            for detail, w, hclock, h, vclock in details:
                 name, _mode_raw = detail[0:2]
+                rate = vclock.split("Hz")[0].strip()
                 mode_id = _mode_raw.strip("()")
                 try:
                     size = Size([int(w), int(h)])
@@ -209,14 +213,11 @@ class XRandR:
                     raise Exception(
                         "Output %s parse error: modename %s modeid %s." % (output.name, name, mode_id)
                     )
-                if "*current" in detail:
-                    currentname = name
-                for x in ["+preferred", "*current"]:
-                    if x in detail:
-                        detail.remove(x)
-
                 for old_mode in output.modes:
                     if old_mode.name == name:
+                        if rate not in old_mode.rates:
+                            old_mode.rates.append(rate)
+                        mode = old_mode
                         if tuple(old_mode) != tuple(size):
                             warnings.warn((
                                 "Supressing duplicate mode %s even "
@@ -224,12 +225,17 @@ class XRandR:
                             ) % (name, size, old_mode))
                         break
                 else:
-                    # the mode is really new
-                    output.modes.append(NamedSize(size, name=name))
-
+                    mode = Mode(size, name=name, rates=[rate])
+                    output.modes.append(mode)
+                if "*current" in detail:
+                    current_mode = mode
+                    current_rate = rate
+                for x in ["+preferred", "*current"]:
+                    if x in detail:
+                        detail.remove(x)
             self.state.outputs[output.name] = output
             self.configuration.outputs[output.name] = self.configuration.OutputConfiguration(
-                active, primary, geometry, current_rotation, currentname
+                active, primary, geometry, current_rotation, current_rate, current_mode
             )
 
     def _load_raw_lines(self):
@@ -245,8 +251,10 @@ class XRandR:
             elif line.startswith(2 * ' '):  # [mode, width, height]
                 line = line.strip()
                 if reduce(bool.__or__, [line.startswith(x + ':') for x in "hv"]):
+                    clock = line.split("clock")[-1]
                     line = line[-len(line):line.index(" start") - len(line)]
                     items[-1][1][-1].append(line[line.rindex(' '):])
+                    items[-1][1][-1].append(clock)
                 else:  # mode
                     items[-1][1].append([line.split()])
             else:
@@ -389,6 +397,8 @@ class XRandR:
                             args.append("--primary")
                     args.append("--mode")
                     args.append(str(output.mode.name))
+                    args.append("--rate")
+                    args.append(output.rate)
                     args.append("--pos")
                     args.append(str(output.position))
                     args.append("--rotate")
@@ -397,18 +407,20 @@ class XRandR:
 
         class OutputConfiguration:
 
-            def __init__(self, active, primary, geometry, rotation, modename):
+            def __init__(self, active, primary, geometry, rotation, rate, mode):
                 self.active = active
                 self.primary = primary
                 if active:
+                    self.rate = rate
                     self.position = geometry.position
                     self.rotation = rotation
                     if rotation.is_odd:
-                        self.mode = NamedSize(
-                            Size(reversed(geometry.size)), name=modename)
+                        self.mode = Mode(
+                            Size(reversed(geometry.size)), name=mode.name, rates=mode.rates)
                     else:
-                        self.mode = NamedSize(geometry.size, name=modename)
+                        self.mode = Mode(
+                            geometry.size, name=mode.name, rates=mode.rates)
 
-            size = property(lambda self: NamedSize(
-                Size(reversed(self.mode)), name=self.mode.name
+            size = property(lambda self: Mode(
+                Size(reversed(self.mode)), name=self.mode.name, rates=self.mode.rates
             ) if self.rotation.is_odd else self.mode)
