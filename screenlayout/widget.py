@@ -404,6 +404,8 @@ class ARandRWidget(Gtk.DrawingArea):
 
                 if i.props.active and output_config.mode.rates:
                     rate_m = Gtk.Menu()
+                    if not hasattr(output_config, 'rate'):
+                        output_config.rate = output_config.mode.rates[0]
                     for rate in output_config.mode.rates:
                         j = Gtk.CheckMenuItem(str(rate))
                         j.props.draw_as_radio = True
